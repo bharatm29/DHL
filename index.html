@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Rate Calculator</title>
+        <script type="module" src="index.js"></script>
+    </head>
+    <body>
+        <form id="countryForm">
+            <select id="country" required></select>
+            <br />
+            Enter Weight:- <input type="number" step="any" id="weight"><br>
+            Enter Length:- <input type="number" step="any" id="length"><br>
+            Enter Width:- <input type="number" step="any" id="width"><br>
+            Enter Height:- <input type="number" step="any" id="height"><br>
+
+            <select id="type" required>
+                <option selected="true" value="doc">DOC</option>
+                <option value="nondoc">NON-DOC</option>
+            </select>
+
+            <input type="submit" required value="Calculate" /><br />
+        </form>
+
+        <h4 id="result"></h4>
+    </body>
+</html>
