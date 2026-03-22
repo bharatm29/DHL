@@ -11,10 +11,10 @@ function getNumber(e: React.ChangeEvent<HTMLInputElement, HTMLInputElement>, pre
 
 export default function Home({zones}) {
     const [country, setCountry] = useState<string>(zones.keys().next().value); // FIXME: (getting first key) -> maybe doesn't work like this?
-    const [weight, setWeight] = useState<string>(0.0);
-    const [length, setLength] = useState<string>(0.0);
-    const [width, setWidth] = useState<string>(0.0);
-    const [height, setHeight] = useState<string>(0.0);
+    const [weight, setWeight] = useState<string>("");
+    const [length, setLength] = useState<string>("");
+    const [width, setWidth] = useState<string>("");
+    const [height, setHeight] = useState<string>("");
     const [type, setType] = useState<string>("doc");
 
     const [isPending, startTransition] = useTransition();

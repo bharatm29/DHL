@@ -1,67 +1,16 @@
 'use server';
 
-import {getCountries} from "@/app/_lib/dhl/zones";
-import fs from "fs/promises";
-import path from "path";
-
-import {parse} from "papaparse";
+import {getCountries, readFile} from "@/app/_lib/dhl/util";
 
 const MAX_DOC_WEIGHT = 2.0;
 const MAX_NON_DOC_WEIGHT = 30.0;
 
-// Maybe move then locally
-const doc = new Map();
-const nondoc = new Map();
-const multiplierWeights = [];
-
-// Populates maps and arrays with csv data
-async function parseCSV(filename) {
-    const filePath = path.join(
-        process.cwd(),
-        filename
-    );
-
-    const file = await fs.readFile(filePath, "utf-8");
-
-    parse(file, {
-        header: false,
-        complete: function (results) {
-            // FIXME: maybe move them out?
-            const DOC_LENGTH = 4;
-            const NON_DOC_LENGTH = 50;
-            const MULTIPLIER_LENGTH = 6;
-
-            for (let i = 0; i < DOC_LENGTH; i++) {
-                const record = results.data[i + 1];
-                const mapping = new Map();
-
-                for (let j = 1; j < record.length; j++) {
-                    mapping.set(j.toString(), record[j].trim());
-                }
-                doc.set(record[0].trim(), mapping);
-            }
-
-            for (let i = 0; i < NON_DOC_LENGTH; i++) {
-                const record = results.data[i + (DOC_LENGTH + 1) + 1]; // 2 for headers (0-based index so only +1)
-                const mapping = new Map();
-
-                for (let j = 1; j < record.length; j++) {
-                    mapping.set(j.toString(), record[j].trim());
-                }
-                nondoc.set(record[0].trim(), mapping);
-            }
-
-            for (let i = 0; i < MULTIPLIER_LENGTH; i++) {
-                const record = results.data[i + (DOC_LENGTH + NON_DOC_LENGTH + 2) + 1];
-                const mapping = new Map();
-
-                for (let j = 1; j < record.length; j++) {
-                    mapping.set(j.toString(), record[j].trim());
-                }
-                nondoc.set(record[0].trim(), mapping);
-                multiplierWeights.push(parseFloat(record[0].trim()));
-            }
-        },
+function deserializeMap(json) {
+    return JSON.parse(json, (key, value) => {
+        if (value && value.__type === "Map") {
+            return new Map(value.value);
+        }
+        return value;
     });
 }
 
@@ -75,9 +24,9 @@ function calculateWeight(data): number {
     return Math.max(data.weight, volumetricWeight);
 }
 
-function findNearest(weight: number) {
+function findNearest(weight: number, weights) {
     //FIXME: Assuming it cannot be more than 500kg
-    for (let w of multiplierWeights) {
+    for (let w of weights) {
         if (weight <= w) return w;
     }
 }
@@ -105,11 +54,14 @@ export async function calculate(data: {
     const obj = zones.get(name);
     const zone = obj.zone.trim();
 
-    await parseCSV("app/_lib/dhl/FranchiseExport.csv");
+    const filename = "FranchiseExport"; // FIXME: must be passed from high up!
+    const doc = deserializeMap(readFile(`${filename}/doc.json`));
+    const nondoc = deserializeMap(readFile(`${filename}/non-doc.json`));
+    const multiplierWeights = JSON.parse(readFile(`${filename}/multiplier.json`));
 
     const weight = calculateWeight(data);
     if (weight >= 500.1) {
-        return [-1, -1, "Shipment cannot be 500.1kg", ""];
+        return [-1, -1, "Shipment cannot be more than 500.1kg", ""];
     }
 
     let rounded = 0.0;
@@ -120,7 +72,7 @@ export async function calculate(data: {
     } else if (weight <= 30.0) {
         rounded = +(Math.ceil(weight).toFixed(1));
     } else {
-        rounded = findNearest(weight);
+        rounded = findNearest(weight, multiplierWeights);
         // FIXME: [find per kilo using multiplier (need to parse them)] -> maybe done??
     }
 
@@ -133,9 +85,9 @@ export async function calculate(data: {
         console.log(`SEEMA CROSSED FOR DOC: ${rounded} > ${MAX_DOC_WEIGHT}, calculating non-doc`);
         result = nondoc.get(rounded.toFixed(1)).get(zone);
     } else {
-        console.log(nondoc.get(rounded.toString()).get(zone))
+        calculatedUnder = "non-doc (multiplier)"
         result = nondoc.get(rounded.toString()).get(zone) * weight;
     }
 
-    return [result, rounded, "", calculatedUnder];
+    return [Number(result.toFixed(2)), rounded, "", calculatedUnder];
 }
