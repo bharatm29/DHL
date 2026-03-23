@@ -20,7 +20,7 @@ const DHL_PATH = "app/_lib/dhl";
 const jsons = ["doc.json", "non-doc.json", "multiplier.json"]
 
 function ifExists(path: string): boolean {
-    for (const json in jsons) {
+    for (const json of jsons) {
         if (!fsync.existsSync(`${path}/${json}`)) return false;
     }
 
@@ -63,12 +63,7 @@ const nondoc = new Map();
 const multiplierWeights = [];
 
 // Populates maps and arrays with csv data
-async function parseCSV(filename) {
-    const filePath = path.join(
-        process.cwd(),
-        filename
-    );
-
+async function parseCSV(filePath) {
     const file = await fs.readFile(filePath, "utf-8");
 
     parse(file, {
@@ -126,22 +121,26 @@ function serializeMap(map) {
 }
 
 export async function prepareDHL(filename: string): Promise<void> {
-    // FIXME: skipping for now, but check for Zones.json too
     if (!fsync.existsSync(`${DHL_PATH}/Zones.json`)) {
         await parseZones(`${DHL_PATH}/Zonal2026.csv`);
     }
 
-    const path = `app/_lib/dhl/${filename}`;
-    if (ifExists(path)) return;
+    const filePath = path.join(
+        process.cwd(),
+        `${DHL_PATH}/${filename}`
+    );
 
+    if (ifExists(filePath)) return;
+
+    console.log(`\x1b[31mNecessary files doens't exist for DHL/${filename}.csv, parsing CSVs\x1b[0m`)
     // do the parsing for the said file
-    await parseCSV(`${path}.csv`)
+    await parseCSV(`${filePath}.csv`)
 
     // write to corresponding files
-    await fs.mkdir(path, {recursive: true});
-    await fs.writeFile(`${path}/doc.json`, serializeMap(doc));
-    await fs.writeFile(`${path}/non-doc.json`, serializeMap(nondoc));
-    await fs.writeFile(`${path}/multiplier.json`, JSON.stringify(multiplierWeights));
+    await fs.mkdir(filePath, {recursive: true});
+    await fs.writeFile(`${filePath}/doc.json`, serializeMap(doc));
+    await fs.writeFile(`${filePath}/non-doc.json`, serializeMap(nondoc));
+    await fs.writeFile(`${filePath}/multiplier.json`, JSON.stringify(multiplierWeights));
 
     return; // dun
 }

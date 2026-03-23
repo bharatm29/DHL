@@ -89,5 +89,5 @@ export async function calculate(data: {
         result = nondoc.get(rounded.toString()).get(zone) * weight;
     }
 
-    return [Number(result.toFixed(2)), rounded, "", calculatedUnder];
+    return [result, rounded, "", calculatedUnder];
 }
