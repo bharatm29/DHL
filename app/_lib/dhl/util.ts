@@ -3,10 +3,13 @@ import fsync from "fs";
 import path from "path";
 import {parse} from "papaparse";
 
+const ROOT = process.cwd();
+const DHL_DIR = path.join(ROOT, 'app', '_lib', 'dhl');
+
 export const readFile = (filename: string): string => {
     const cmdfilePath = path.join(
-        process.cwd(),
-        `app/_lib/dhl/${filename}`
+        DHL_DIR,
+        filename
     );
 
     return fsync.readFileSync(cmdfilePath, "utf-8");
@@ -29,7 +32,7 @@ function ifExists(path: string): boolean {
 
 async function parseZones(filename: string) {
     const filePath = path.join(
-        process.cwd(),
+        DHL_DIR,
         filename
     );
 
@@ -54,7 +57,7 @@ async function parseZones(filename: string) {
         },
     });
 
-    await fs.writeFile(`${DHL_PATH}/Zones.json`, JSON.stringify(Array.from(zones.entries())));
+    await fs.writeFile(path.join(DHL_DIR, 'Zones.json'), JSON.stringify(Array.from(zones.entries())));
 }
 
 // Maybe move then locally
@@ -121,13 +124,13 @@ function serializeMap(map) {
 }
 
 export async function prepareDHL(filename: string): Promise<void> {
-    if (!fsync.existsSync(`${DHL_PATH}/Zones.json`)) {
-        await parseZones(`${DHL_PATH}/Zonal2026.csv`);
+    if (!fsync.existsSync(path.join(DHL_DIR, 'Zones.json'))) {
+        await parseZones(`Zonal2026.csv`);
     }
 
     const filePath = path.join(
-        process.cwd(),
-        `${DHL_PATH}/${filename}`
+        DHL_DIR,
+        filename
     );
 
     if (ifExists(filePath)) return;
