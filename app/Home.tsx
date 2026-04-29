@@ -11,6 +11,7 @@ interface ShippingResult {
   productType: string;
 }
 
+// FIXME: export into .svg files
 const ArrowDownIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path fillRule="evenodd" clipRule="evenodd" d="M4.40863 6.90743C4.73391 6.58215 5.2613 6.58215 5.58658 6.90743L10.4117 11.7325L15.2368 6.90743C15.562 6.58215 16.0894 6.58215 16.4147 6.90743C16.74 7.23271 16.74 7.76009 16.4147 8.08537L11.0006 13.4994C10.8444 13.6556 10.6326 13.7434 10.4117 13.7434C10.1908 13.7434 9.9789 13.6556 9.8227 13.4994L4.40863 8.08537C4.08335 7.76009 4.08335 7.23271 4.40863 6.90743Z" fill="#111113" />
@@ -59,16 +60,16 @@ export default function Home({ zones }) {
         type: product,
       });
 
-      if (err.length > 0) {
+      if (err?.length > 0) {
         setError(err);
         setResults([]);
       } else {
         setResults([
           {
             service: "InXpress - DHL",
-            transitDays: "3-4 Days",
+            transitDays: "N/A",
             price,
-            handover: "Drop-Off",
+            handover: "Export",
             productType: calculatedType,
           },
         ]);
@@ -182,8 +183,8 @@ export default function Home({ zones }) {
                   onChange={e => setProduct(e.target.value)}
                   required
                 >
-                  <option value="doc">DOX</option>
-                  <option value="nondoc">NON-DOX</option>
+                  <option value="doc">DOC</option>
+                  <option value="nondoc">NON-DOC</option>
                 </select>
                 <ArrowDownIcon />
               </div>
@@ -269,7 +270,6 @@ export default function Home({ zones }) {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="form-actions">
             <button type="submit" className="btn-submit" disabled={isPending}>
               {isPending ? "Calculating..." : "Submit"}
@@ -280,12 +280,10 @@ export default function Home({ zones }) {
           </div>
         </form>
 
-        {/* Error Message */}
         {error && (
           <p className="error-message">{error}</p>
         )}
 
-        {/* Results Table */}
         {results.length > 0 && (
           <div className="results-section">
             <div className="results-table-header">
@@ -299,7 +297,7 @@ export default function Home({ zones }) {
               <div key={idx} className="results-table-row">
                 <span className="col-service row-text">{row.service}</span>
                 <span className="col-transit row-text">{row.transitDays}</span>
-                <span className="col-price row-text">INR {row.price.toFixed(2)}</span>
+                <span className="col-price row-text">INR {row.price}</span>{/*FIXME: figure out alternative to toFixed()*/}
                 <span className="col-handover row-text">{row.handover}</span>
                 <button className="btn-ship-now">Ship Now</button>
                 <span className="expand-icon">

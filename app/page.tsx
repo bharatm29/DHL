@@ -11,8 +11,6 @@ export default async function Page() {
      * 4. Additionally, in future, if we want to include different csv files other than DHL, we can create a hierarchy over page
      * 5. Page would turn into another component which will be called after a dropdown or a loop on the UI
      */
-    await prepareDHL("FranchiseExport");
-
     const zones = getCountries();
 
     return <Home zones={zones}/>;
