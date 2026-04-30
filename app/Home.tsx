@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from "react";
-import { calculate } from "@/app/_lib/calculate";
+import { calculateDHL } from "@/app/_lib/dhl/calculate";
+import { calculateUPS } from "@/app/_lib/ups/calculate";
 
 interface ShippingResult {
   service: string;
@@ -38,20 +39,23 @@ export default function Home({ zones }) {
   const [city, setCity] = useState<string>("");
   const [state, setState] = useState<string>("");
   const [product, setProduct] = useState<string>("doc");
-  const [length, setLength] = useState<string>("71");
-  const [width, setWidth] = useState<string>("71");
-  const [height, setHeight] = useState<string>("71");
-  const [weight, setWeight] = useState<string>("71");
+  const [length, setLength] = useState<string>("0");
+  const [width, setWidth] = useState<string>("0");
+  const [height, setHeight] = useState<string>("0");
+  const [weight, setWeight] = useState<string>("0");
 
   const [isPending, startTransition] = useTransition();
   const [results, setResults] = useState<ShippingResult[]>([]);
   const [error, setError] = useState<string>("");
 
   const handleSubmit = (e: React.FormEvent) => {
+    setResults([]); // reset before another calculation
     e.preventDefault();
     setError("");
+    const calculations = [calculateDHL, calculateUPS]
+    for (const calculate of calculations) {
     startTransition(async () => {
-      const [price, calculatedWeight, err, calculatedType] = await calculate({
+      let [service, price, calculatedWeight, err, calculatedType] = await calculate({
         country: destinationCountry,
         weight: parseFloat(weight),
         length: parseFloat(length),
@@ -64,17 +68,17 @@ export default function Home({ zones }) {
         setError(err);
         setResults([]);
       } else {
-        setResults([
+        setResults(values => [
           {
-            service: "InXpress - DHL",
+            service: service,
             transitDays: "N/A",
             price,
             handover: "Export",
             productType: calculatedType,
-          },
-        ]);
+          }, ...values]);
       }
     });
+    }
   };
 
   const handleReset = () => {
@@ -138,6 +142,7 @@ export default function Home({ zones }) {
             <div className="form-group">
               <label className="field-label">Pincode</label>
               <input
+                  disabled={true}
                 className="text-field"
                 type="text"
                 placeholder="Enter Pincode"
@@ -152,6 +157,7 @@ export default function Home({ zones }) {
             <div className="form-group">
               <label className="field-label">City</label>
               <input
+                  disabled={true}
                 className="text-field"
                 type="text"
                 placeholder="City"
@@ -164,6 +170,7 @@ export default function Home({ zones }) {
               <label className="field-label">State</label>
               <div className="select-wrapper">
                 <select
+                    disabled={true}
                   className="select-field"
                   value={state}
                   onChange={e => setState(e.target.value)}
@@ -288,7 +295,7 @@ export default function Home({ zones }) {
           <div className="results-section">
             <div className="results-table-header">
               <span className="col-service">Service</span>
-              <span className="col-transit">Est. Transit</span>
+              <span className="col-transit">Type</span>
               <span className="col-price">Est. Price</span>
               <span className="col-handover">Handover</span>
             </div>
@@ -296,7 +303,7 @@ export default function Home({ zones }) {
             {results.map((row, idx) => (
               <div key={idx} className="results-table-row">
                 <span className="col-service row-text">{row.service}</span>
-                <span className="col-transit row-text">{row.transitDays}</span>
+                <span className="col-transit row-text">{row.productType}</span>
                 <span className="col-price row-text">INR {row.price}</span>{/*FIXME: figure out alternative to toFixed()*/}
                 <span className="col-handover row-text">{row.handover}</span>
                 <button className="btn-ship-now">Ship Now</button>

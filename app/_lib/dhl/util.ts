@@ -19,7 +19,6 @@ export function getCountries() {
     return new Map(JSON.parse(readFile("Zones.json")));
 }
 
-const DHL_PATH = "app/_lib/dhl";
 const jsons = ["doc.json", "non-doc.json", "multiplier.json"]
 
 function ifExists(path: string): boolean {

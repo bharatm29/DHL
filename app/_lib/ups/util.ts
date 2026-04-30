@@ -16,10 +16,9 @@ export const readFile = (filename: string): string => {
 };
 
 export function getCountries() {
-    return new Map(JSON.parse(readFile("ZonesUPS.json")));
+    return new Map(JSON.parse(readFile("Zones.json")));
 }
 
-const UPS_PATH = "app/_lib/ups";
 const jsons = ["doc.json", "non-doc.json", "multiplier.json"]
 
 function ifExists(path: string): boolean {
@@ -50,6 +49,9 @@ async function parseZones(filename: string) {
                     if (!name) continue;
 
                     let zone = record[i + 1].trim();
+                    if (zone.startsWith("Special Rate")) {
+                        zone = name;
+                    }
                     zones.set(name.trim(), {zone});
                 }
             });
@@ -76,12 +78,18 @@ async function parseCSV(filePath) {
             const NON_DOC_LENGTH = 40;
             const MULTIPLIER_LENGTH = 6;
 
+            const header = results.data[0];
+
             for (let i = 0; i < DOC_LENGTH; i++) {
                 const record = results.data[i + 1];
                 const mapping = new Map();
 
                 for (let j = 1; j < record.length; j++) {
-                    mapping.set(j.toString(), record[j].trim());
+                    let key = j.toString().trim();
+                    if (!header[j].trim().startsWith("ZONE")) {
+                        key = header[j].trim();
+                    }
+                    mapping.set(key, record[j].trim());
                 }
                 doc.set(record[0].trim(), mapping);
             }
@@ -91,7 +99,11 @@ async function parseCSV(filePath) {
                 const mapping = new Map();
 
                 for (let j = 1; j < record.length; j++) {
-                    mapping.set(j.toString(), record[j].trim());
+                    let key = j.toString().trim();
+                    if (!header[j].trim().startsWith("ZONE")) {
+                        key = header[j].trim();
+                    }
+                    mapping.set(key, record[j].trim());
                 }
                 nondoc.set(record[0].trim(), mapping);
             }
@@ -101,7 +113,11 @@ async function parseCSV(filePath) {
                 const mapping = new Map();
 
                 for (let j = 1; j < record.length; j++) {
-                    mapping.set(j.toString(), record[j].trim());
+                    let key = j.toString().trim();
+                    if (!header[j].trim().startsWith("ZONE")) {
+                        key = header[j].trim();
+                    }
+                    mapping.set(key, record[j].trim());
                 }
                 nondoc.set(record[0].trim(), mapping);
                 multiplierWeights.push(parseFloat(record[0].trim()));
